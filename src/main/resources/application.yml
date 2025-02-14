@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: auction_app
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auction_app
+    username: postgres
+    password: gokul@2006
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
