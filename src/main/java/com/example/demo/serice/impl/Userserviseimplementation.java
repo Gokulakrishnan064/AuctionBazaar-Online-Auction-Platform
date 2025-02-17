@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.entity.Userentity;
@@ -14,12 +15,13 @@ import com.example.demo.repository.Userrepo;
 public class Userserviseimplementation {
 	@Autowired
 	private Userrepo userRepo;
-	
+	BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 	public Userentity saveUser(Userentity user) {
 		if(userRepo.findByEmail(user.getEmailid())==null) {
 			user.setPhoneno(user.getPhoneno()!=null?user.getPhoneno():null);
 			user.setCreatedby(user.getFirstname()+" "+user.getLastname());
 			user.setCreatedat(Timestamp.valueOf(LocalDateTime.now()));
+			user.setPassword(encoder.encode(user.getPassword()));
 			user.setUpdatedat(null);
 			user.setUpdatedby(null);
 			Userentity savedUser = userRepo.save(user);
@@ -27,13 +29,10 @@ public class Userserviseimplementation {
 		}
 		return null;
 	}
-	public String delectbyId(int id) {
-		if(userRepo.findById(id)!=null) {
-			userRepo.deleteById(id);	
-			return "user has been deleted";
-		}
-		return "user not found";
-		
+	public Userentity deleteUser(int Id) {
+		Optional<Userentity> user = userRepo.findById(Id);
+		userRepo.deleteById(Id);
+		return user.isPresent()?user.get():null;
 	}
 	public Userentity updateUser(Userentity user) {
 		Optional<Userentity> oldUser = userRepo.findById(user.getId());
