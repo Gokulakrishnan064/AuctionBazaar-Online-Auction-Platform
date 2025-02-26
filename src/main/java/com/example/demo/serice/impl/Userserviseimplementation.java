@@ -15,6 +15,8 @@ import com.example.demo.repository.Userrepo;
 public class Userserviseimplementation {
 	@Autowired
 	private Userrepo userRepo;
+	@Autowired
+	private MailServiceImpl mailService;
 	BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 	public Userentity saveUser(Userentity user) {
 		if(userRepo.findByEmail(user.getEmailid())==null) {
@@ -25,6 +27,7 @@ public class Userserviseimplementation {
 			user.setUpdatedat(null);
 			user.setUpdatedby(null);
 			Userentity savedUser = userRepo.save(user);
+			mailService.sendWelcomeEmail(user.getEmailid(), user.getFirstname());
 			return savedUser;
 		}
 		return null;
@@ -33,6 +36,9 @@ public class Userserviseimplementation {
 		Optional<Userentity> user = userRepo.findById(Id);
 		userRepo.deleteById(Id);
 		return user.isPresent()?user.get():null;
+	}
+	public Userentity findById(int id) {
+		return userRepo.findById(id).get();
 	}
 	public Userentity updateUser(Userentity user) {
 		Optional<Userentity> oldUser = userRepo.findById(user.getId());

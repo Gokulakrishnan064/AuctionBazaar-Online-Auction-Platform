@@ -177,7 +177,7 @@ public class AuctionController {
 		List<AuctionEntity> auctions = auctionServiceImpl.getAuctionByUserId(userId);
 		if(auctions!=null) {
 			response.setAuctions(auctions);
-			response.setResponseCode(userId);
+			response.setResponseCode(HttpStatus.OK.value());
 			response.setResponseMessage(HttpStatus.OK.name());
 			response.setStatusMessage("Auction fetched Successfully");
 		}else {
