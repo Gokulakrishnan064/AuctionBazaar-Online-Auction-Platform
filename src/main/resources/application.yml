@@ -26,6 +26,6 @@ spring:
         mail.smtp.starttls.required: true   
 server:
   servlet:
-    context-path: /auction
+    context-path: /auction_app
 file:
   upload-dir : ./upload

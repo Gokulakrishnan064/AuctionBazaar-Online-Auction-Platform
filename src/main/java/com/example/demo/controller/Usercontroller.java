@@ -18,41 +18,40 @@ import com.example.demo.model.User_login;
 import com.example.demo.model.User_response_model;
 import com.example.demo.serice.Userservice;
 import com.example.demo.serice.impl.Userserviseimplementation;
+
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
 @RestController
-@RequestMapping("/auction")
-
+@RequestMapping("/users")
+@CrossOrigin(origins = "http://localhost:3000")
 public class Usercontroller {
 	@Autowired
 	private Userserviseimplementation userImpl;
-	@PostMapping("/saveuser")
+	@PostMapping("/signup")
 	public ResponseEntity<User_response_model> saveUsers(@RequestBody Save_user_model user){
-		User_response_model userRespModel=new User_response_model();
+	User_response_model userRespModel=new User_response_model();
 	Userentity newUser=new Userentity();
 	newUser.setFirstname(user.getFirstName());
 	newUser.setLastname(user.getLastName());
 	newUser.setEmailid(user.getEmail());
 	newUser.setPhoneno(user.getPhoneNumber());
 	newUser.setPassword(user.getPassword());
-	boolean val = false;	
-	if(user.getPassword().equals(user.getConfirmPassword())) {
-		val = true;
+	
 	Userentity savedUser = userImpl.saveUser(newUser);
 	if(savedUser!=null) {
 		userRespModel.setUser(savedUser);
 		userRespModel.setResponseMessage(HttpStatus.OK.name());
 		userRespModel.setResponseCode(HttpStatus.OK.value());
 		userRespModel.setStatusMessage("User has been created successfully");
-	}
 	}else {
 		userRespModel.setUser(null);
-		userRespModel.setResponseMessage(!val?(HttpStatus.CONFLICT.name()):(HttpStatus.ALREADY_REPORTED.name()));
-		userRespModel.setResponseCode(!val?(HttpStatus.CONFLICT.value()):(HttpStatus.ALREADY_REPORTED.value()));
-		userRespModel.setStatusMessage(val?("User Aldready exist with email id : "+user.getEmail()):"password Doesn't match");
+		userRespModel.setResponseMessage(HttpStatus.ALREADY_REPORTED.name());
+		userRespModel.setResponseCode(HttpStatus.ALREADY_REPORTED.value());
+		userRespModel.setStatusMessage("User Aldready exist with email id : "+user.getEmail());
 	}
 	userRespModel.setTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
 	return ResponseEntity.status(userRespModel.getResponseCode()).body(userRespModel);	
@@ -102,7 +101,7 @@ public ResponseEntity<User_response_model> updateUser(@RequestBody Update_user u
 	return ResponseEntity.status(userRespModel.getResponseCode()).body(userRespModel);	
 }
 
-@PostMapping("/authandicate")
+@PostMapping("/login")
 public ResponseEntity<User_response_model> authandicateUsers(@RequestBody User_login user){
 	User_response_model userRespModel = new User_response_model();
 	Userentity authUser = userImpl.authandicateUser(user.getEmail(), user.getPassword());

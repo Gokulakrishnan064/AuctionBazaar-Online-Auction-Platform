@@ -9,5 +9,4 @@ public class Save_user_model {
 	private String email;
 	private String phoneNumber;
 	private String password;
-	private String confirmPassword;
 }

@@ -68,7 +68,7 @@ newUserData.setPassword(newUserData.getPassword()!=null?newUserData.getPassword(
 	{
 		Userentity user=userRepo.findByEmail(email);
 		if(user!=null) {
-			if(user.getPassword().equals(password)) {
+			if(encoder.matches(password,user.getPassword())) {
 				return user;
 				
 						
