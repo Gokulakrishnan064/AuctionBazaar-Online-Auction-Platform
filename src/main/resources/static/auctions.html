@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explore Live Auctions – AuctionBazaar</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .filter-hud-bar {
+      background: var(--bg-card);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem 1.8rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sort-tab {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-light);
+      color: var(--text-secondary);
+      border-radius: 30px;
+      padding: 0.45rem 1.1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .sort-tab:hover, .sort-tab.active {
+      border-color: var(--gold);
+      color: var(--gold);
+      background: rgba(245, 158, 11, 0.15);
+      box-shadow: 0 0 15px var(--gold-glow);
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-auction" id="mainNavbar"></nav>
+
+<div class="container py-4">
+  <div class="text-center my-4">
+    <h1 style="font-family:var(--font-heading);font-size:2.6rem;">Explore Live Marketplace</h1>
+    <p style="color:var(--text-muted);font-size:0.95rem;">Browse, filter by category & price range, and bid in real-time</p>
+  </div>
+
+  <!-- HUD Filter Bar -->
+  <div class="filter-hud-bar">
+    <div class="row g-3 align-items-center mb-3">
+      <div class="col-md-5">
+        <div style="position:relative;">
+          <i class="bi bi-search" style="position:absolute;left:1.1rem;top:50%;transform:translateY(-50%);color:var(--text-muted);"></i>
+          <input type="text" class="form-control-auction w-100" id="searchInput" placeholder="Search auctions by keyword..." style="padding-left:2.8rem!important;">
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="sort-tab active" data-sort="all" onclick="setSort(this,'all')">All</button>
+          <button class="sort-tab" data-sort="low" onclick="setSort(this,'low')"><i class="bi bi-sort-numeric-up"></i> Price ↑</button>
+          <button class="sort-tab" data-sort="high" onclick="setSort(this,'high')"><i class="bi bi-sort-numeric-down"></i> Price ↓</button>
+        </div>
+      </div>
+      <div class="col-md-3 text-md-end">
+        <span style="font-size:.85rem;color:var(--text-muted);" id="resultsCount">Loading items...</span>
+      </div>
+    </div>
+
+    <!-- Category Pill Filter Chips -->
+    <div class="d-flex align-items-center gap-2 flex-wrap pt-2 border-top" style="border-color:var(--border-light)!important;" id="categoryChips">
+      <button class="cat-pill-chip active" onclick="setCategory(this, 'all')">All Categories</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Jewelry & Gems')">💎 Jewelry & Gems</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Digital Art')">🎨 Digital Art</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Luxury Watches')">⌚ Luxury Watches</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Antiques')">🏺 Antiques</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Tech & Electronics')">📷 Tech & Electronics</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Vehicles')">🏎️ Vehicles</button>
+      <button class="cat-pill-chip" onclick="setCategory(this, 'Rare Collectibles')">🏆 Collectibles</button>
+    </div>
+  </div>
+
+  <!-- 3D Card Grid -->
+  <div class="row g-4" id="auctionsGrid">
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-gold" role="status" style="color:var(--gold);"></div>
+    </div>
+  </div>
+</div>
+
+<div id="mainFooter"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNavbar('auctions');
+  renderFooter();
+
+  let allAuctions = [];
+  let filtered = [];
+  let currentSort = 'all';
+  let currentCategory = 'all';
+
+  async function loadAuctions() {
+    const res = await apiCall('/auction/findAllAuction');
+    const grid = document.getElementById('auctionsGrid');
+    const auctionsList = res.data?.auctions || res.data?.allAuction || [];
+
+    if (!res.ok || auctionsList.length === 0) {
+      grid.innerHTML = `<div class="col-12 text-center py-5" style="color:var(--text-muted);"><i class="bi bi-inbox fs-1 d-block mb-2"></i><p>No active auctions found.</p></div>`;
+      return;
+    }
+
+    allAuctions = auctionsList;
+    applyFilters();
+  }
+
+  function setSort(el, sort) {
+    document.querySelectorAll('.sort-tab').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentSort = sort;
+    applyFilters();
+  }
+
+  function setCategory(el, cat) {
+    document.querySelectorAll('.cat-pill-chip').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    currentCategory = cat;
+    applyFilters();
+  }
+
+  function applyFilters() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    filtered = allAuctions.filter(a => {
+      const matchesSearch = (a.title || '').toLowerCase().includes(query) || (a.description || '').toLowerCase().includes(query);
+      const matchesCat = currentCategory === 'all' || (a.category && a.category.toLowerCase() === currentCategory.toLowerCase());
+      return matchesSearch && matchesCat;
+    });
+
+    if (currentSort === 'low') {
+      filtered.sort((a, b) => (parseFloat(a.currentPrice || a.basePrice || 0)) - (parseFloat(b.currentPrice || b.basePrice || 0)));
+    } else if (currentSort === 'high') {
+      filtered.sort((a, b) => (parseFloat(b.currentPrice || b.basePrice || 0)) - (parseFloat(a.currentPrice || a.basePrice || 0)));
+    }
+
+    renderGrid();
+  }
+
+  function renderGrid() {
+    const grid = document.getElementById('auctionsGrid');
+    document.getElementById('resultsCount').innerHTML = `Showing <span style="color:var(--gold);font-weight:600;">${filtered.length}</span> auctions`;
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div class="col-12 text-center py-5" style="color:var(--text-muted);"><i class="bi bi-search fs-1 d-block mb-2"></i><p>No auctions match your search criteria.</p></div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(a => {
+      const imgUrl = a.imagePath ? `${API_BASE}/upload/${a.imagePath}` : a.imageUrl;
+      const catSlug = getCategorySlug(a.title, a.category);
+      return `
+      <div class="col-sm-6 col-lg-4 tilt-container">
+        <div class="auction-card h-100" onclick="window.location.href='auction-details.html?id=${a.id}'" style="cursor:pointer;">
+          <div class="card-img-wrapper" data-category="${catSlug}">
+            ${imgUrl ? `<img src="${imgUrl}" alt="${a.title}" onerror="this.src='https://via.placeholder.com/400x250/0F172A/F59E0B?text=AuctionBazaar'">` : `<div style="height:200px;background:var(--bg-card);display:flex;align-items:center;justify-content:center;color:var(--text-muted);"><i class="bi bi-image" style="font-size:2.5rem;"></i></div>`}
+            <div style="position:absolute;top:.8rem;left:.8rem;">
+              <span class="status-badge-live">Live</span>
+            </div>
+            <button class="btn-quick-view-icon" onclick="event.stopPropagation(); openQuickView(${a.id})" title="Quick View">
+              <i class="bi bi-eye"></i>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="card-title-auction text-capitalize">${a.title || 'Untitled Auction'}</div>
+            <p style="font-size:.82rem;color:var(--text-muted);margin:.3rem 0 .9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${a.description || 'No description provided.'}</p>
+            <div class="d-flex justify-content-between align-items-end mt-auto pt-2" style="border-top:1px solid var(--border-light);">
+              <div>
+                <div class="card-price-label">Current Bid</div>
+                <div class="card-price">${formatCurrency(a.currentPrice || a.basePrice || 0)}</div>
+              </div>
+              <span class="bid-badge"><i class="bi bi-lightning-charge-fill me-1"></i>Bid Now</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    }).join('');
+
+    setTimeout(init3DTiltCards, 100);
+  }
+
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+  loadAuctions();
+</script>
+</body>
+</html>

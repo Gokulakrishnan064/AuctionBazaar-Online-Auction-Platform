@@ -22,8 +22,6 @@ import com.auction.app.model.SaveBidReqModel;
 import com.auction.app.service.impl.BidsServiceImpl;
 import com.auction.app.service.impl.UserServiceImplementation;
 
-
-
 @RestController
 @CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/bids")
@@ -53,6 +51,26 @@ public class BidsController {
 		respModel.setTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
 		return ResponseEntity.status(respModel.getResponseCode()).body(respModel);
 	}
+
+	@GetMapping("/getAllBidsByAuctionId/{auctionId}")
+	public ResponseEntity<BidsResponse> getAllBidsByAuctionId(@PathVariable int auctionId){
+		BidsResponse respModel = new BidsResponse();
+		List<BidsEntity> response = bidsService.findAllBidsByAuctionId(auctionId);
+		if(response!=null) {
+			respModel.setStatusMessage("Sucessfully fetched");
+			respModel.setAllBids(response);
+			respModel.setResponseCode(HttpStatus.OK.value());
+			respModel.setResponseMessage(HttpStatus.OK.name());
+		}else {
+			respModel.setStatusMessage("Data Unavailable");
+			respModel.setAllBids(response);
+			respModel.setResponseCode(HttpStatus.CONFLICT.value());
+			respModel.setResponseMessage(HttpStatus.CONFLICT.name());
+		}
+		respModel.setTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
+		return ResponseEntity.status(respModel.getResponseCode()).body(respModel);
+	}
+
 	@PostMapping("/SaveBids")
 	public ResponseEntity<BidrespModel> saveBid(@RequestBody SaveBidReqModel bid){
 		BidrespModel respModel = new BidrespModel();
@@ -77,6 +95,7 @@ public class BidsController {
 		respModel.setTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
 		return ResponseEntity.status(respModel.getResponseCode()).body(respModel);
 	}
+
 	@GetMapping("/getByLargestBid/{auctionId}")
 	public ResponseEntity<BidrespModel> getLargeBids(@PathVariable int auctionId){
 		BidrespModel respModel = new BidrespModel();
@@ -95,6 +114,7 @@ public class BidsController {
 		respModel.setTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
 		return ResponseEntity.status(respModel.getResponseCode()).body(respModel);
 	}
+
 	@GetMapping("/bidById/{Id}")
 	public ResponseEntity<BidrespModel> BidById(@PathVariable int Id){
 		BidrespModel respModel = new BidrespModel();

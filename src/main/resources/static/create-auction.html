@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List an Auction – AuctionBazaar 3D</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .upload-zone-3d {
+      border: 2px dashed var(--border-glow);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.02);
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .upload-zone-3d:hover, .upload-zone-3d.dragover {
+      border-color: var(--cyan);
+      background: rgba(6, 182, 212, 0.08);
+      box-shadow: 0 0 25px var(--cyan-glow);
+    }
+
+    .upload-zone-3d input[type=file] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-auction" id="mainNavbar"></nav>
+
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <div class="hud-panel">
+        <div class="text-center mb-4">
+          <h2 style="font-family:var(--font-heading);"><i class="bi bi-rocket-takeoff-fill me-2" style="color:var(--cyan);"></i>Launch 3D Listing</h2>
+          <p style="color:var(--text-muted);font-size:0.9rem;">Fill details below to publish your auction on the 3D marketplace feed</p>
+        </div>
+
+        <form id="createAuctionForm">
+          <div class="mb-3">
+            <label class="form-label-auction">Auction Title *</label>
+            <input type="text" class="form-control-auction w-100" id="title" placeholder="e.g. Vintage Rolex Submariner 1965" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label-auction">Item Description *</label>
+            <textarea class="form-control-auction w-100" id="description" rows="4" placeholder="Describe the item condition, rarity, and origin details..." required style="resize:vertical;"></textarea>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label-auction">Category</label>
+              <select class="form-control-auction w-100" id="categoryId">
+                <option value="1">Jewelry &amp; Watches</option>
+                <option value="2">Art &amp; Collectibles</option>
+                <option value="3">Electronics &amp; Tech</option>
+                <option value="4">Vehicles</option>
+                <option value="5">Fashion</option>
+                <option value="6">Antiques</option>
+              </select>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label-auction">Base / Starting Price (₹) *</label>
+              <input type="number" class="form-control-auction w-100" id="basePrice" placeholder="1000" min="1" required>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label class="form-label-auction">Start Date &amp; Time *</label>
+              <input type="datetime-local" class="form-control-auction w-100" id="startDateTime" required>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label-auction">End Date &amp; Time *</label>
+              <input type="datetime-local" class="form-control-auction w-100" id="endDateTime" required>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label-auction">Upload Listing Image</label>
+            <div id="imagePreviewWrapper" class="d-none mb-3 text-center">
+              <img id="imagePreview" src="" alt="Preview" style="max-height:260px;border-radius:14px;border:1px solid var(--border-glow);">
+              <div class="mt-2">
+                <button type="button" class="btn btn-outline-gold btn-sm" onclick="clearImage()"><i class="bi bi-x-lg me-1"></i>Remove</button>
+              </div>
+            </div>
+            <div class="upload-zone-3d" id="uploadZone">
+              <input type="file" id="imageFile" accept="image/*" onchange="previewImage(this)">
+              <i class="bi bi-cloud-arrow-up-fill fs-1 d-block mb-2" style="color:var(--cyan);"></i>
+              <p style="color:var(--text-primary);font-weight:600;font-size:0.95rem;margin-bottom:0.2rem;">Drag and drop image here or click to browse</p>
+              <p style="color:var(--text-muted);font-size:0.8rem;">Supports PNG, JPG, WEBP formats</p>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-gold w-100 py-3 fs-6" id="submitBtn">
+            <i class="bi bi-broadcast me-2"></i>Publish Auction to Marketplace
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="mainFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNavbar('create-auction');
+  renderFooter();
+  requireAuth();
+
+  const now = new Date();
+  const start = new Date(now.getTime() + 5 * 60000);
+  const end = new Date(now.getTime() + 24 * 3600000);
+  document.getElementById('startDateTime').value = start.toISOString().slice(0, 16);
+  document.getElementById('endDateTime').value = end.toISOString().slice(0, 16);
+
+  function previewImage(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('imagePreview').src = e.target.result;
+      document.getElementById('imagePreviewWrapper').classList.remove('d-none');
+      document.getElementById('uploadZone').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearImage() {
+    document.getElementById('imageFile').value = '';
+    document.getElementById('imagePreviewWrapper').classList.add('d-none');
+    document.getElementById('uploadZone').style.display = 'block';
+  }
+
+  document.getElementById('createAuctionForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const user = getUser();
+    if (!user) { window.location.href = 'login.html'; return; }
+
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const basePrice = document.getElementById('basePrice').value;
+    const categoryId = document.getElementById('categoryId').value;
+    const startDateTime = document.getElementById('startDateTime').value;
+    const endDateTime = document.getElementById('endDateTime').value;
+    const imageFile = document.getElementById('imageFile').files[0];
+
+    function formatToJdbcTimestamp(str) {
+      if (!str) return '';
+      let replaced = str.replace('T', ' ');
+      if (replaced.split(':').length === 2) { return replaced + ':00'; }
+      return replaced;
+    }
+
+    const formData = new FormData();
+    formData.append('user_id', user.id);
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('basePrice', basePrice);
+    formData.append('categoryId', categoryId);
+    formData.append('startDateTime', formatToJdbcTimestamp(startDateTime));
+    formData.append('endDateTime', formatToJdbcTimestamp(endDateTime));
+    if (imageFile) { formData.append('image', imageFile); }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+
+    try {
+      const response = await fetch(`${API_BASE}/auction/save-auction`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      btn.disabled = false;
+
+      if (response.ok && (data?.responseCode === 200 || response.status === 201)) {
+        showToast('Auction created successfully!', 'success');
+        setTimeout(() => { window.location.href = 'auctions.html'; }, 1200);
+      } else {
+        showToast(data?.message || 'Failed to create auction', 'error');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      showToast('Network connection error', 'error');
+    }
+  });
+</script>
+</body>
+</html>

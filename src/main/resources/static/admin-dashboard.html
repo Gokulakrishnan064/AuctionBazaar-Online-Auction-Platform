@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – AuctionBazaar 3D</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-auction" id="mainNavbar"></nav>
+
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 style="font-family:var(--font-heading);"><i class="bi bi-speedometer2 me-2" style="color:var(--cyan);"></i>Platform Control Dashboard</h2>
+      <p style="color:var(--text-muted);font-size:0.9rem;margin:0;">Overview of active marketplace listings and platform metrics</p>
+    </div>
+    <a href="create-auction.html" class="btn btn-gold"><i class="bi bi-plus-lg me-1"></i>New Listing</a>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-sm-6 col-md-3">
+      <div class="hud-panel text-center py-3">
+        <div class="card-price-label">Total Auctions</div>
+        <div class="stat-number-3d mt-1" id="totalAuctions">—</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="hud-panel text-center py-3">
+        <div class="card-price-label">Active Listings</div>
+        <div class="stat-number-3d mt-1" id="liveAuctions" style="color:var(--emerald);">—</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="hud-panel text-center py-3">
+        <div class="card-price-label">User Bids</div>
+        <div class="stat-number-3d mt-1" id="totalBids" style="color:var(--violet);">—</div>
+      </div>
+    </div>
+    <div class="col-sm-6 col-md-3">
+      <div class="hud-panel text-center py-3">
+        <div class="card-price-label">Highest Bid Recorded</div>
+        <div class="stat-number-3d mt-1" id="highestBid" style="color:var(--pink);">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud-panel">
+    <h5 style="font-family:var(--font-heading);" class="mb-3"><i class="bi bi-list-stars me-2" style="color:var(--cyan);"></i>Active Auctions Table</h5>
+    <div class="table-responsive">
+      <table class="table table-dark table-hover align-middle mb-0" style="background:transparent;">
+        <thead>
+          <tr style="border-color:var(--border-light);color:var(--text-muted);font-size:0.82rem;text-transform:uppercase;">
+            <th>ID</th>
+            <th>Title</th>
+            <th>Base Price</th>
+            <th>Current Bid</th>
+            <th>End Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminAuctionsTable">
+          <tr>
+            <td colspan="6" class="text-center py-4" style="color:var(--text-muted);">Loading system data...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="mainFooter"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNavbar('dashboard');
+  renderFooter();
+  requireAuth();
+
+  async function loadDashboard() {
+    const user = getUser();
+    const [auctionsRes, bidsRes] = await Promise.all([
+      apiCall('/auction/findAllAuction'),
+      user ? apiCall(`/bids/getBidsByUserId/${user.id}`) : Promise.resolve({ ok: false })
+    ]);
+
+    const auctions = auctionsRes.data?.auctions || auctionsRes.data?.allAuction || [];
+    if (auctionsRes.ok && auctions.length >= 0) {
+      document.getElementById('totalAuctions').textContent = auctions.length;
+      document.getElementById('liveAuctions').textContent = auctions.length;
+      renderTable(auctions);
+    }
+
+    const bids = bidsRes.data?.allBids || [];
+    if (bidsRes.ok) {
+      document.getElementById('totalBids').textContent = bids.length;
+      const highest = bids.reduce((max, b) => Math.max(max, parseFloat(b.amount) || 0), 0);
+      document.getElementById('highestBid').textContent = formatCurrency(highest);
+    }
+  }
+
+  function renderTable(auctions) {
+    const tbody = document.getElementById('adminAuctionsTable');
+    if (auctions.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4" style="color:var(--text-muted);">No auctions available.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = auctions.map(a => `
+      <tr style="border-color:var(--border-light);">
+        <td><span style="color:var(--cyan);font-weight:600;">#${a.id}</span></td>
+        <td><span style="font-weight:600;color:var(--text-primary);">${a.title}</span></td>
+        <td><span style="color:var(--text-muted);">${formatCurrency(a.basePrice || 0)}</span></td>
+        <td><span style="font-family:var(--font-display);font-weight:700;color:var(--cyan);">${formatCurrency(a.currentPrice || a.basePrice || 0)}</span></td>
+        <td><span style="color:var(--text-muted);font-size:.85rem;">${formatDate(a.endDateTime)}</span></td>
+        <td>
+          <a href="auction-details.html?id=${a.id}" class="btn btn-outline-gold btn-sm"><i class="bi bi-eye-fill me-1"></i>View</a>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

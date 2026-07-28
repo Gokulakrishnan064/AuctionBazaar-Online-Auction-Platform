@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auction Details - AuctionBazaar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <a href="index.html" class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                AuctionBazaar
+            </a>
+            <ul class="nav-links" id="nav-right">
+                <!-- Filled dynamically -->
+            </ul>
+        </div>
+    </header>
+
+    <main>
+        <!-- Loading Indicator -->
+        <div id="detail-loading" style="text-align: center; padding: 5rem 0;">
+            <div class="shimmer" style="width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 1.5rem auto;"></div>
+            <div class="shimmer" style="width: 300px; height: 30px; margin: 0 auto 1rem auto; border-radius: 6px;"></div>
+            <div class="shimmer" style="width: 200px; height: 20px; margin: 0 auto; border-radius: 6px;"></div>
+        </div>
+
+        <!-- Detail Container -->
+        <div id="detail-container" class="detail-grid" style="display: none;">
+            <div class="detail-left">
+                <div class="detail-img-container">
+                    <img id="item-image" src="" alt="Product Image" class="detail-img" onerror="this.src='https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=800&auto=format&fit=crop&q=60'">
+                </div>
+                <div style="margin-top: 2rem;">
+                    <span id="item-category" class="card-tag" style="position: static; display: inline-block; margin-bottom: 1rem;">Category</span>
+                    <h1 id="item-title" class="detail-title">Item Title</h1>
+                    <div class="detail-meta">
+                        <span class="detail-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            Listed by User #<span id="item-seller">Seller ID</span>
+                        </span>
+                        <span class="detail-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Starts: <span id="item-start">Date</span>
+                        </span>
+                        <span class="detail-meta-item">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Ends: <span id="item-end">Date</span>
+                        </span>
+                    </div>
+                    <div class="detail-desc" id="item-desc">Item description goes here...</div>
+                </div>
+            </div>
+
+            <div class="detail-right">
+                <div class="bid-panel">
+                    <div class="bid-panel-header">
+                        <span class="bid-panel-title" id="price-heading">Current Highest Bid</span>
+                        <div class="bid-panel-price" id="current-price">$0.00</div>
+                        <div id="starting-price-helper" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Starting Price: $0.00</div>
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <span class="bid-panel-title">Remaining Time</span>
+                        <div class="timer-badge" id="countdown-badge" style="position: static; font-size: 1.2rem; padding: 0.5rem 1rem; width: 100%; justify-content: center; margin-top: 0.5rem;">Loading Countdown...</div>
+                    </div>
+
+                    <!-- Bidding Interaction Form -->
+                    <div id="bid-action-section">
+                        <form id="place-bid-form" onsubmit="handlePlaceBid(event)">
+                            <div class="form-group">
+                                <label class="form-label" for="bid-amount">Your Bid Amount</label>
+                                <div class="bid-input-wrapper">
+                                    <span class="bid-currency">$</span>
+                                    <input type="number" step="0.01" id="bid-amount" class="bid-input" required placeholder="0.00">
+                                </div>
+                                <span id="min-bid-error" style="font-size: 0.8rem; color: var(--accent-red); display: none;"></span>
+                            </div>
+                            <button type="submit" id="submit-bid-btn" class="bid-submit-btn">Place Bid</button>
+                        </form>
+                    </div>
+
+                    <!-- Winner display when ended -->
+                    <div id="winner-section" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px dashed var(--accent); padding: 1.25rem; border-radius: 12px; text-align: center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.5rem;"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+                        <h4 style="color: var(--accent); font-family: var(--font-heading); font-size: 1.15rem; margin-bottom: 0.25rem;">Auction Ended</h4>
+                        <p id="winner-message" style="font-size: 0.9rem; color: var(--text-secondary);"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 AuctionBazaar. All rights reserved. Premium Web Experience.</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        let auctionId = null;
+        let auction = null;
+        let highestBidVal = 0;
+        let timerInterval = null;
+
+        const categoryMap = {
+            '1': 'Electronics',
+            '2': 'Fashion',
+            '3': 'Collectibles',
+            '4': 'Home & Living',
+            '5': 'Vehicles'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            auctionId = parseInt(params.get('id'));
+            
+            if (!auctionId) {
+                showToast('Invalid Auction ID.', 'error');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            loadAuctionDetails();
+        });
+
+        function loadAuctionDetails() {
+            fetch(`${API_BASE}/auction/findById/${auctionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.responseCode === 200 && data.auction) {
+                        auction = data.auction;
+                        fetchHighestBid();
+                    } else {
+                        showToast('Auction not found.', 'error');
+                        window.location.href = 'index.html';
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Failed to load item detail.', 'error');
+                });
+        }
+
+        function fetchHighestBid() {
+            fetch(`${API_BASE}/bids/getByLargestBid/${auctionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    let highestBid = null;
+                    if (data.responseCode === 200 && data.bid) {
+                        highestBid = data.bid;
+                    }
+                    displayDetails(highestBid);
+                })
+                .catch(err => {
+                    console.error(err);
+                    // If call fails, show starting price
+                    displayDetails(null);
+                });
+        }
+
+        function displayDetails(highestBid) {
+            document.getElementById('detail-loading').style.display = 'none';
+            document.getElementById('detail-container').style.display = 'grid';
+
+            document.getElementById('item-title').textContent = auction.title;
+            document.getElementById('item-desc').textContent = auction.description;
+            document.getElementById('item-seller').textContent = auction.user_id;
+            document.getElementById('item-start').textContent = formatDateTime(auction.startDateTime);
+            document.getElementById('item-end').textContent = formatDateTime(auction.endDateTime);
+            document.getElementById('item-category').textContent = categoryMap[String(auction.categoryId)] || 'General';
+            
+            // Set image
+            const imgUrl = auction.imagePath ? `${API_BASE}/upload/${auction.imagePath}` : 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=800&auto=format&fit=crop&q=60';
+            document.getElementById('item-image').src = imgUrl;
+
+            // Display Prices
+            const basePrice = parseFloat(auction.basePrice);
+            document.getElementById('starting-price-helper').textContent = `Starting Price: ${formatCurrency(basePrice)}`;
+            
+            if (highestBid) {
+                highestBidVal = parseFloat(highestBid.amount);
+                document.getElementById('price-heading').textContent = 'Current Highest Bid';
+                document.getElementById('current-price').textContent = formatCurrency(highestBidVal);
+                document.getElementById('bid-amount').min = (highestBidVal + 0.01).toFixed(2);
+                document.getElementById('bid-amount').placeholder = (highestBidVal + 1.00).toFixed(2);
+            } else {
+                highestBidVal = 0;
+                document.getElementById('price-heading').textContent = 'Starting Price';
+                document.getElementById('current-price').textContent = formatCurrency(basePrice);
+                document.getElementById('bid-amount').min = (basePrice + 0.01).toFixed(2);
+                document.getElementById('bid-amount').placeholder = (basePrice + 1.00).toFixed(2);
+            }
+
+            // Start timer
+            updateDetailTimer(highestBid);
+            timerInterval = setInterval(() => updateDetailTimer(highestBid), 1000);
+        }
+
+        function updateDetailTimer(highestBid) {
+            const now = new Date().getTime();
+            const startTime = new Date(auction.startDateTime).getTime();
+            const endTime = new Date(auction.endDateTime).getTime();
+            const badge = document.getElementById('countdown-badge');
+            const actionSection = document.getElementById('bid-action-section');
+            const winnerSection = document.getElementById('winner-section');
+
+            if (now < startTime) {
+                badge.className = 'timer-badge upcoming';
+                const startDiff = getCountdown(auction.startDateTime);
+                badge.innerHTML = `Starts in: ${startDiff.text}`;
+                document.getElementById('submit-bid-btn').disabled = true;
+                document.getElementById('submit-bid-btn').textContent = 'Auction Upcoming';
+            } else if (now >= endTime) {
+                clearInterval(timerInterval);
+                badge.className = 'timer-badge ended';
+                badge.innerHTML = 'Ended';
+                
+                // Hide bidding form, show winner
+                actionSection.style.display = 'none';
+                winnerSection.style.display = 'block';
+
+                if (highestBid) {
+                    document.getElementById('winner-message').innerHTML = `Winner: <strong>${highestBid.createdBy}</strong> with a bid of <strong>${formatCurrency(highestBid.amount)}</strong>`;
+                } else {
+                    document.getElementById('winner-message').textContent = 'No bids were placed on this item.';
+                }
+            } else {
+                badge.className = 'timer-badge';
+                const diff = getCountdown(auction.endDateTime);
+                badge.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.4rem;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${diff.text}`;
+                document.getElementById('submit-bid-btn').disabled = false;
+                document.getElementById('submit-bid-btn').textContent = 'Place Bid';
+            }
+        }
+
+        function handlePlaceBid(e) {
+            e.preventDefault();
+            const user = getLoggedInUser();
+            
+            if (!user) {
+                showToast('You must be logged in to place a bid.', 'error');
+                setTimeout(() => {
+                    window.location.href = `login.html?redirect=auction-detail.html?id=${auctionId}`;
+                }, 1200);
+                return;
+            }
+
+            const bidAmountInput = document.getElementById('bid-amount');
+            const bidVal = parseFloat(bidAmountInput.value);
+            const basePrice = parseFloat(auction.basePrice);
+            const minAllowed = highestBidVal > 0 ? highestBidVal : basePrice;
+
+            if (bidVal <= minAllowed) {
+                showToast(`Bid must be greater than ${formatCurrency(minAllowed)}.`, 'error');
+                return;
+            }
+
+            // Post bid
+            fetch(`${API_BASE}/bids/SaveBids`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: user.id,
+                    auctionId: auctionId,
+                    amount: bidVal.toString()
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.responseCode === 200) {
+                    showToast('Bid placed successfully!', 'success');
+                    bidAmountInput.value = '';
+                    // Reload to update state
+                    loadAuctionDetails();
+                } else {
+                    showToast(data.statusMessage || 'Failed to place bid.', 'error');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast('Failed to place bid. Server error.', 'error');
+            });
+        }
+    </script>
+</body>
+</html>

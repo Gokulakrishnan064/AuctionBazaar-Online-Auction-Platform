@@ -2,7 +2,6 @@ package com.auction.app.service.impl;
 
 import java.util.List;
 import java.util.Optional;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.auction.app.entity.BidsEntity;
@@ -19,12 +18,16 @@ public class BidsServiceImpl {
 		int upd=auctionService.updateAmount(bids.getAuctionId(),bids.getAmount());
 		if(upd!=0) return bidsRepo.save(bids);
 		return null;
-		
 	}
 	
 	public BidsEntity readRecentHighestBid(int auctionId) {
 		return bidsRepo.findHighestBidByAuctionId(auctionId)!=null?bidsRepo.findHighestBidByAuctionId(auctionId):null;
 	}
+
+	public List<BidsEntity> findAllBidsByAuctionId(int auctionId) {
+		return bidsRepo.findAllBidsByAuctionId(auctionId);
+	}
+
 	public List<BidsEntity> findBidsByUserId(int userID) {
 		return bidsRepo.findByUserId(userID);
 	}
@@ -32,5 +35,4 @@ public class BidsServiceImpl {
 		Optional<BidsEntity> res = bidsRepo.findById(Id);
 		return res.isEmpty()?null:res.get();
 	}
-	
 }

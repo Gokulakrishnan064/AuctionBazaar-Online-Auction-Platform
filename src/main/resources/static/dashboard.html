@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard - AuctionBazaar</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="navbar">
+            <a href="index.html" class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                AuctionBazaar
+            </a>
+            <ul class="nav-links" id="nav-right">
+                <!-- Filled dynamically -->
+            </ul>
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard-grid">
+            <!-- Left Panel: Profile info & edit -->
+            <div class="profile-panel">
+                <div class="profile-card">
+                    <div class="profile-avatar" id="profile-initials">U</div>
+                    <h3 class="profile-name" id="profile-name">User Name</h3>
+                    <p class="profile-email" id="profile-email">user@example.com</p>
+                    
+                    <button class="edit-profile-btn" onclick="toggleEditProfileForm()">Edit Profile</button>
+                    
+                    <!-- Edit Profile Form (Initially Hidden) -->
+                    <form id="edit-profile-form" style="display: none; margin-top: 1.5rem; text-align: left;" onsubmit="handleUpdateProfile(event)">
+                        <div class="form-group">
+                            <label class="form-label" for="edit-firstname">First Name</label>
+                            <input type="text" id="edit-firstname" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="edit-lastname">Last Name</label>
+                            <input type="text" id="edit-lastname" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="edit-phone">Phone Number</label>
+                            <input type="text" id="edit-phone" class="form-input" placeholder="e.g. +1234567890">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="edit-password">Confirm Password / New Password</label>
+                            <input type="password" id="edit-password" class="form-input" required placeholder="Enter password to save">
+                        </div>
+                        <button type="submit" class="submit-btn" style="padding: 0.6rem;">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Panel: Tabs for My Listings & My Bids -->
+            <div class="dashboard-details">
+                <div class="dashboard-content-tabs">
+                    <div class="dashboard-tab active" id="tab-listings" onclick="switchDashboardTab('listings')">My Listings</div>
+                    <div class="dashboard-tab" id="tab-bids" onclick="switchDashboardTab('bids')">My Bids</div>
+                </div>
+
+                <!-- My Listings Content -->
+                <div id="listings-content" class="dashboard-tab-content">
+                    <div class="card-grid" id="my-listings-grid">
+                        <div class="auction-card shimmer" style="height: 200px;"></div>
+                        <div class="auction-card shimmer" style="height: 200px;"></div>
+                    </div>
+                </div>
+
+                <!-- My Bids Content -->
+                <div id="bids-content" class="dashboard-tab-content" style="display: none;">
+                    <div class="history-list" id="my-bids-list" style="max-height: none;">
+                        <div class="auction-card shimmer" style="height: 80px;"></div>
+                        <div class="auction-card shimmer" style="height: 80px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 AuctionBazaar. All rights reserved. Premium Web Experience.</p>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script>
+        let loggedInUser = null;
+        let auctionsLookup = {};
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loggedInUser = requireAuth();
+            if (!loggedInUser) return;
+
+            // Load profile data
+            const fullName = `${loggedInUser.firstName || ''} ${loggedInUser.lastName || ''}`.trim() || loggedInUser.userName;
+            document.getElementById('profile-name').textContent = fullName;
+            document.getElementById('profile-email').textContent = loggedInUser.email;
+            
+            // Set initials
+            const initials = ((loggedInUser.firstName?.[0] || '') + (loggedInUser.lastName?.[0] || '')).toUpperCase() || loggedInUser.userName.slice(0, 2).toUpperCase();
+            document.getElementById('profile-initials').textContent = initials;
+
+            // Fill edit fields
+            document.getElementById('edit-firstname').value = loggedInUser.firstName || '';
+            document.getElementById('edit-lastname').value = loggedInUser.lastName || '';
+            document.getElementById('edit-phone').value = loggedInUser.phoneNumber || '';
+
+            // Fetch lookup table for auction titles, then load user data
+            fetch(`${API_BASE}/auction/findAllAuction`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.auctions) {
+                        data.auctions.forEach(a => {
+                            auctionsLookup[a.id] = a.title;
+                        });
+                    }
+                    loadMyListings();
+                    loadMyBids();
+                })
+                .catch(() => {
+                    loadMyListings();
+                    loadMyBids();
+                });
+        });
+
+        function toggleEditProfileForm() {
+            const form = document.getElementById('edit-profile-form');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function switchDashboardTab(type) {
+            const listingsContent = document.getElementById('listings-content');
+            const bidsContent = document.getElementById('bids-content');
+            const tabListings = document.getElementById('tab-listings');
+            const tabBids = document.getElementById('tab-bids');
+
+            if (type === 'listings') {
+                listingsContent.style.display = 'block';
+                bidsContent.style.display = 'none';
+                tabListings.classList.add('active');
+                tabBids.classList.remove('active');
+            } else {
+                listingsContent.style.display = 'none';
+                bidsContent.style.display = 'block';
+                tabListings.classList.remove('active');
+                tabBids.classList.add('active');
+            }
+        }
+
+        function loadMyListings() {
+            const grid = document.getElementById('my-listings-grid');
+            grid.innerHTML = '';
+
+            fetch(`${API_BASE}/auction/findAuctionByUserId/${loggedInUser.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.responseCode === 200 && data.auctions && data.auctions.length > 0) {
+                        data.auctions.forEach(item => {
+                            const card = document.createElement('div');
+                            card.className = 'auction-card';
+                            
+                            const imgUrl = item.imagePath ? `${API_BASE}/upload/${item.imagePath}` : 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=500&auto=format&fit=crop&q=60';
+                            const now = new Date().getTime();
+                            const endTime = new Date(item.endDateTime).getTime();
+                            let statusText = 'Active';
+                            let statusClass = '';
+                            if (now >= endTime) {
+                                statusText = 'Ended';
+                                statusClass = 'ended';
+                            }
+
+                            card.innerHTML = `
+                                <div class="card-image-wrapper" style="padding-top: 50%;">
+                                    <img src="${imgUrl}" alt="${item.title}" class="card-image">
+                                    <span class="card-tag ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="card-content" style="padding: 1rem;">
+                                    <h4 class="card-title">${item.title}</h4>
+                                    <div class="card-footer" style="padding-top: 0.75rem; border-top: none;">
+                                        <div class="price-container">
+                                            <span class="price-label">Starting Price</span>
+                                            <span class="price-value">${formatCurrency(item.basePrice)}</span>
+                                        </div>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            <a href="auction-detail.html?id=${item.id}" class="bid-action-btn" style="padding: 0.4rem 0.8rem;">View</a>
+                                            <button onclick="handleDeleteAuction(${item.id})" class="bid-action-btn" style="padding: 0.4rem 0.8rem; background: rgba(239, 68, 68, 0.1); border-color: var(--accent-red); color: #FCA5A5;">Delete</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            grid.appendChild(card);
+                        });
+                    } else {
+                        grid.innerHTML = `
+                            <div class="empty-state">
+                                <p>You haven't listed any items for auction yet.</p>
+                                <a href="create-auction.html" class="auth-link" style="margin-top: 1rem; display: inline-block;">Create one now &rarr;</a>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    grid.innerHTML = '<div class="empty-state"><p>Error loading listings.</p></div>';
+                });
+        }
+
+        function loadMyBids() {
+            const list = document.getElementById('my-bids-list');
+            list.innerHTML = '';
+
+            fetch(`${API_BASE}/bids/getBidsByUserId/${loggedInUser.id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.responseCode === 200 && data.allBids && data.allBids.length > 0) {
+                        data.allBids.forEach(bid => {
+                            const item = document.createElement('div');
+                            item.className = 'history-item';
+                            item.style.marginBottom = '0.5rem';
+
+                            const itemTitle = auctionsLookup[bid.auctionId] || `Listing #${bid.auctionId}`;
+
+                            item.innerHTML = `
+                                <div class="history-bidder">
+                                    <span class="history-bidder-name">Placed bid on <strong>${itemTitle}</strong></span>
+                                    <span class="history-bidder-time">${formatDateTime(bid.createdAt)}</span>
+                                </div>
+                                <span class="history-amount" style="color: var(--accent);">${formatCurrency(bid.amount)}</span>
+                            `;
+                            list.appendChild(item);
+                        });
+                    } else {
+                        list.innerHTML = `
+                            <div class="empty-state">
+                                <p>You haven't placed any bids yet.</p>
+                                <a href="index.html" class="auth-link" style="margin-top: 1rem; display: inline-block;">Browse listings &rarr;</a>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    list.innerHTML = '<div class="empty-state"><p>Error loading bids history.</p></div>';
+                });
+        }
+
+        function handleDeleteAuction(id) {
+            if (!confirm('Are you sure you want to delete this listing?')) return;
+
+            fetch(`${API_BASE}/auction/deleteAuction/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.responseCode === 200) {
+                        showToast('Listing deleted successfully', 'success');
+                        loadMyListings();
+                    } else {
+                        showToast(data.statusMessage || 'Failed to delete listing', 'error');
+                    }
+                })
+                .catch(() => {
+                    showToast('Failed to delete listing. Server error.', 'error');
+                });
+        }
+
+        function handleUpdateProfile(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('edit-firstname').value;
+            const lastName = document.getElementById('edit-lastname').value;
+            const phoneNumber = document.getElementById('edit-phone').value;
+            const password = document.getElementById('edit-password').value;
+
+            fetch(`${API_BASE}/users/update-user`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: loggedInUser.id,
+                    firstName,
+                    lastName,
+                    phoneNumber,
+                    password,
+                    confirmPassword: password
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.responseCode === 200 && data.user) {
+                    setLoggedInUser(data.user);
+                    loggedInUser = data.user;
+                    showToast('Profile updated successfully!', 'success');
+                    
+                    // Reload display
+                    document.getElementById('profile-name').textContent = `${loggedInUser.firstName} ${loggedInUser.lastName}`;
+                    document.getElementById('edit-profile-form').style.display = 'none';
+                    setupNavbar();
+                } else {
+                    showToast(data.statusMessage || 'Failed to update profile.', 'error');
+                }
+            })
+            .catch(() => {
+                showToast('Failed to update profile. Server error.', 'error');
+            });
+        }
+    </script>
+</body>
+</html>
