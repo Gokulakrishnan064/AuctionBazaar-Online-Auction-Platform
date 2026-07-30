@@ -279,7 +279,7 @@ function renderNavbar(activePage) {
   navEl.innerHTML = `
     <div class="container">
       <a class="navbar-brand navbar-brand-custom" href="index.html">
-        <i class="bi bi-hammer me-2" style="color:var(--gold);"></i>AuctionBazaar
+        <img src="images/logo.png" alt="AuctionBazaar GK Logo" style="height:36px;width:auto;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(245,158,11,0.4));" class="me-2">AuctionBazaar
       </a>
       <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navCollapse">
         <span class="navbar-toggler-icon"></span>
@@ -306,7 +306,7 @@ function renderFooter() {
       <div class="container">
         <div class="row g-4">
           <div class="col-md-4">
-            <div class="footer-brand mb-2"><i class="bi bi-hammer me-2"></i>AuctionBazaar</div>
+            <div class="footer-brand mb-2 d-flex align-items-center gap-2"><img src="images/logo.png" alt="AuctionBazaar GK Logo" style="height:36px;width:auto;filter:drop-shadow(0 2px 8px rgba(245,158,11,0.3));">AuctionBazaar</div>
             <p class="footer-text">The realistic 3D grand auction house. Real-time bidding, PBR stage environments, instant search, and verified items.</p>
           </div>
           <div class="col-md-2">

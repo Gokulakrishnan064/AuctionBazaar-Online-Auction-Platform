@@ -82,15 +82,15 @@ public class BidsController {
 		saveBid.setCreatedBy(userService.findById(bid.getUserId()).getUserName());
 		BidsEntity response = bidsService.saveRepo(saveBid);
 		if(response!=null) {
-			respModel.setStatusMessage("Sucessfully fetched");
+			respModel.setStatusMessage("Bid placed successfully");
 			respModel.setBid(response);
 			respModel.setResponseCode(HttpStatus.OK.value());
 			respModel.setResponseMessage(HttpStatus.OK.name());
 		}else {
-			respModel.setStatusMessage("Data Unavailable");
-			respModel.setBid(response);
-			respModel.setResponseCode(HttpStatus.CONFLICT.value());
-			respModel.setResponseMessage(HttpStatus.CONFLICT.name());
+			respModel.setStatusMessage("Bidding is closed for this auction or bid amount is invalid");
+			respModel.setBid(null);
+			respModel.setResponseCode(HttpStatus.BAD_REQUEST.value());
+			respModel.setResponseMessage(HttpStatus.BAD_REQUEST.name());
 		}
 		respModel.setTimeStamp(Timestamp.valueOf(LocalDateTime.now()));
 		return ResponseEntity.status(respModel.getResponseCode()).body(respModel);

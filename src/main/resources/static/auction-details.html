@@ -219,15 +219,35 @@
       startCountdown(a.endDateTime, 'countdownWrapper');
     }
 
-    const user = getUser();
-    if (!user) {
+    const isEnded = a.endDateTime && new Date(a.endDateTime).getTime() <= new Date().getTime();
+
+    if (isEnded) {
       document.getElementById('bidFormWrapper').classList.add('d-none');
-      document.getElementById('loginPrompt').classList.remove('d-none');
+      document.getElementById('loginPrompt').classList.add('d-none');
+      let closedBanner = document.getElementById('closedBanner');
+      if (!closedBanner) {
+        closedBanner = document.createElement('div');
+        closedBanner.id = 'closedBanner';
+        closedBanner.className = 'p-4 text-center rounded-3 mb-3';
+        closedBanner.style.cssText = 'background:rgba(236,72,153,0.12);border:1px solid var(--pink);';
+        closedBanner.innerHTML = `
+          <i class="bi bi-lock-fill text-pink fs-1 d-block mb-2"></i>
+          <h5 class="fw-bold" style="color:var(--pink);">Bidding Has Ended</h5>
+          <p style="color:var(--text-secondary);font-size:0.9rem;" class="mb-0">This auction officially ended on <strong>${formatDate(a.endDateTime)}</strong>. No further bids can be accepted.</p>
+        `;
+        document.getElementById('bidFormWrapper').parentElement.insertBefore(closedBanner, document.getElementById('bidFormWrapper'));
+      }
     } else {
-      const minBid = (parseFloat(a.currentPrice) || parseFloat(a.basePrice) || 0) + 1;
-      document.getElementById('bidAmount').min = minBid;
-      document.getElementById('bidAmount').value = minBid;
-      document.getElementById('minBidHint').textContent = `Minimum bid: ${formatCurrency(minBid)}`;
+      const user = getUser();
+      if (!user) {
+        document.getElementById('bidFormWrapper').classList.add('d-none');
+        document.getElementById('loginPrompt').classList.remove('d-none');
+      } else {
+        const minBid = (parseFloat(a.currentPrice) || parseFloat(a.basePrice) || 0) + 1;
+        document.getElementById('bidAmount').min = minBid;
+        document.getElementById('bidAmount').value = minBid;
+        document.getElementById('minBidHint').textContent = `Minimum bid: ${formatCurrency(minBid)}`;
+      }
     }
   }
 
@@ -310,6 +330,12 @@
 
   async function submitBid(e) {
     e.preventDefault();
+    if (auctionData && auctionData.endDateTime && new Date(auctionData.endDateTime).getTime() <= new Date().getTime()) {
+      playAudioFx('alert');
+      showToast('Bidding is closed for this auction.', 'error');
+      return;
+    }
+
     const user = getUser();
     if (!user) { window.location.href = 'login.html'; return; }
 
@@ -336,7 +362,8 @@
       loadHighestBid();
     } else {
       playAudioFx('alert');
-      showToast(res.data?.message || 'Failed to place bid', 'error');
+      const errMsg = res.data?.statusMessage || res.data?.message || 'Bidding is closed for this auction';
+      showToast(errMsg, 'error');
     }
   }
 
